@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  drafts    Draft[]
+}
+
+model NaverAccount {
+  id             Int             @id @default(autoincrement())
+  nickname       String
+  naverId        String          @unique
+  naverPw        String
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  scheduledPosts ScheduledPost[]
+}
+
+model Cafe {
+  id        Int      @id @default(autoincrement())
+  name      String
+  url       String   @unique
+  createdAt DateTime @default(now())
+  boards    Board[]
+}
+
+model Board {
+  id             Int             @id @default(autoincrement())
+  name           String
+  boardId        String
+  cafe           Cafe            @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  cafeId         Int
+  scheduledPosts ScheduledPost[]
+
+  @@unique([cafeId, boardId])
+}
+
+model Draft {
+  id             Int             @id @default(autoincrement())
+  title          String
+  content        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  author         User            @relation(fields: [authorId], references: [id])
+  authorId       Int
+  images         DraftImage[]
+  scheduledPosts ScheduledPost[]
+}
+
+model DraftImage {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  path      String
+  order     Int      @default(0)
+  draft     Draft    @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  draftId   Int
+}
+
+model ScheduledPost {
+  id          Int          @id @default(autoincrement())
+  draft       Draft        @relation(fields: [draftId], references: [id])
+  draftId     Int
+  account     NaverAccount @relation(fields: [accountId], references: [id])
+  accountId   Int
+  board       Board        @relation(fields: [boardId], references: [id])
+  boardId     Int
+  scheduledAt DateTime
+  status      String       @default("pending")
+  postedUrl   String?
+  errorMsg    String?
+  executedAt  DateTime?
+  createdAt   DateTime     @default(now())
+}
