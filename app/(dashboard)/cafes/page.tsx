@@ -11,6 +11,10 @@ export default function CafesPage() {
   const [url, setUrl] = useState("");
   const [boards, setBoards] = useState([{ name: "", boardId: "" }]);
   const [msg, setMsg] = useState("");
+  const [addBoardCafeId, setAddBoardCafeId] = useState<number | null>(null);
+  const [newBoardName, setNewBoardName] = useState("");
+  const [newBoardId, setNewBoardId] = useState("");
+  const [boardMsg, setBoardMsg] = useState<Record<number, string>>({});
 
   async function fetchCafes() {
     const res = await fetch("/api/cafes");
@@ -46,7 +50,33 @@ export default function CafesPage() {
     await fetch("/api/cafes", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id, type: "cafe" }),
+    });
+    fetchCafes();
+  }
+
+  async function handleAddBoard(cafeId: number) {
+    if (!newBoardName || !newBoardId) return setBoardMsg({ ...boardMsg, [cafeId]: "게시판명과 ID를 입력해주세요." });
+    setBoardMsg({ ...boardMsg, [cafeId]: "추가 중..." });
+    const res = await fetch("/api/cafes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cafeId, boardName: newBoardName, boardId: newBoardId }),
+    });
+    const data = await res.json();
+    if (data.error) { setBoardMsg({ ...boardMsg, [cafeId]: `❌ ${data.error}` }); return; }
+    setBoardMsg({ ...boardMsg, [cafeId]: "✅ 추가 완료" });
+    setNewBoardName(""); setNewBoardId("");
+    setAddBoardCafeId(null);
+    fetchCafes();
+  }
+
+  async function handleDeleteBoard(boardId: number) {
+    if (!confirm("게시판을 삭제하시겠습니까?")) return;
+    await fetch("/api/cafes", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: boardId, type: "board" }),
     });
     fetchCafes();
   }
@@ -94,11 +124,26 @@ export default function CafesPage() {
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {cafe.boards.map((board) => (
-                <span key={board.id} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                <span key={board.id} className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
                   {board.name} (ID: {board.boardId})
+                  <button onClick={() => handleDeleteBoard(board.id)} className="ml-1 text-gray-400 hover:text-red-500 leading-none">×</button>
                 </span>
               ))}
+              <button
+                onClick={() => { setAddBoardCafeId(cafe.id); setNewBoardName(""); setNewBoardId(""); setBoardMsg({}); }}
+                className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs rounded"
+              >+ 게시판 추가</button>
             </div>
+
+            {addBoardCafeId === cafe.id && (
+              <div className="mt-3 flex flex-wrap gap-2 items-center">
+                <input type="text" placeholder="게시판명" value={newBoardName} onChange={(e) => setNewBoardName(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300 w-32" />
+                <input type="text" placeholder="게시판 ID" value={newBoardId} onChange={(e) => setNewBoardId(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300 w-24" />
+                <button onClick={() => handleAddBoard(cafe.id)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg">추가</button>
+                <button onClick={() => setAddBoardCafeId(null)} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded-lg">취소</button>
+                {boardMsg[cafe.id] && <span className="text-xs text-gray-500">{boardMsg[cafe.id]}</span>}
+              </div>
+            )}
           </div>
         ))}
       </div>
