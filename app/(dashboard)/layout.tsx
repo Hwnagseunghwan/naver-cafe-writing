@@ -18,9 +18,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Link href="/" className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
             📋 예약 현황
           </Link>
-          <Link href="/schedule" className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-            ⏰ 예약 등록
-          </Link>
           <Link href="/drafts" className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
             📝 원고 관리
           </Link>
