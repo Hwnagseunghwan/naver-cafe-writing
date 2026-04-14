@@ -63,7 +63,7 @@ async function postToCafe(
   imagePaths: string[]
 ): Promise<string> {
   const browser = await chromium.launch({
-    headless: true,
+    headless: false,
     args: [
       "--disable-blink-features=AutomationControlled",
       "--no-sandbox",
