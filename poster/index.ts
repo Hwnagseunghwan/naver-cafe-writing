@@ -101,17 +101,15 @@ async function postToCafe(
     await page.locator("textarea.textarea_input").fill(title);
     await page.waitForTimeout(500);
 
-    // 내용 입력 (SE4 - contenteditable)
+    // 내용 입력 (SE4 - contenteditable, 키보드 타이핑 방식)
     const contentArea = page.locator(".se-section-text").first();
     await contentArea.click();
     await page.waitForTimeout(500);
-    await page.evaluate((html: string) => {
-      const editable = document.querySelector(".se-section-text") as HTMLElement;
-      if (editable) {
-        editable.innerHTML = html;
-        editable.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      }
-    }, content);
+    await page.keyboard.press("Control+a");
+    await page.keyboard.press("Delete");
+    // HTML 태그 제거 후 plain text로 입력
+    const plainText = content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+    await page.keyboard.type(plainText, { delay: 30 });
     await page.waitForTimeout(500);
 
     // 이미지 첨부 (선택적)
