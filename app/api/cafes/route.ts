@@ -91,8 +91,10 @@ export async function DELETE(req: Request) {
   const { id, type } = await req.json();
   try {
     if (type === "board") {
+      await prisma.scheduledPost.deleteMany({ where: { boardId: id } });
       await prisma.board.delete({ where: { id } });
     } else {
+      await prisma.scheduledPost.deleteMany({ where: { board: { cafeId: id } } });
       await prisma.cafe.delete({ where: { id } });
     }
     return NextResponse.json({ success: true });
