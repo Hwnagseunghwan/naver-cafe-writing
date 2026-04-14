@@ -90,29 +90,27 @@ async function postToCafe(
   try {
     await login(page, naverId, naverPw);
 
-    // 카페 글쓰기 페이지 이동
-    // cafeUrl 예: https://cafe.naver.com/xxxxx, numericCafeId: 숫자 ID
-    const cafeSlug = cafeUrl.replace(/^https?:\/\/cafe\.naver\.com\//, "").replace(/\/$/, "");
-    const writeUrl = `https://cafe.naver.com/${cafeSlug}?iframe_url=/ArticleWrite.nhn%3Fclub.clubid=${numericCafeId}%26menuid=${boardId}`;
+    // 카페 글쓰기 페이지 이동 (새 UI)
+    const writeUrl = `https://cafe.naver.com/ca-fe/cafes/${numericCafeId}/menus/${boardId}/articles/write?boardType=L`;
     console.log(`  글쓰기 URL: ${writeUrl}`);
-    console.log(`  numericCafeId: ${numericCafeId}, boardId: ${boardId}`);
 
     await page.goto(writeUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForTimeout(3000);
 
-    // iframe 전환
-    const frame = page.frameLocator("#cafe_main").first();
-
-    // 제목 입력
-    await frame.locator("#subject").fill(title);
+    // 제목 입력 (새 UI - textarea.textarea_input)
+    await page.locator("textarea.textarea_input").fill(title);
     await page.waitForTimeout(500);
 
-    // 에디터 iframe 찾기 (스마트에디터)
-    const editorFrame = frame.frameLocator(".se-iframe, iframe[name='SmartEditor']").first();
-
-    // 내용 입력 (HTML)
-    await editorFrame.locator("body").evaluate((el: HTMLElement, html: string) => {
-      el.innerHTML = html;
+    // 내용 입력 (SE4 - contenteditable)
+    const contentArea = page.locator(".se-section-text").first();
+    await contentArea.click();
+    await page.waitForTimeout(500);
+    await page.evaluate((html: string) => {
+      const editable = document.querySelector(".se-section-text") as HTMLElement;
+      if (editable) {
+        editable.innerHTML = html;
+        editable.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      }
     }, content);
     await page.waitForTimeout(500);
 
@@ -121,7 +119,7 @@ async function postToCafe(
       try {
         const absolutePath = path.join(process.cwd(), "public", imgPath);
         if (fs.existsSync(absolutePath)) {
-          const fileInput = frame.locator("input[type='file']").first();
+          const fileInput = page.locator("input[type='file']").first();
           await fileInput.setInputFiles(absolutePath);
           await page.waitForTimeout(2000);
         }
@@ -129,7 +127,7 @@ async function postToCafe(
     }
 
     // 등록 버튼 클릭
-    await frame.locator(".button_register, .btn_register, button:has-text('등록')").first().click();
+    await page.locator("button:has-text('등록')").last().click();
     await page.waitForTimeout(3000);
 
     const postedUrl = page.url();
