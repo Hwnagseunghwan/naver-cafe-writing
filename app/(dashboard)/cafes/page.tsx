@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 
 type Board = { id: number; name: string; boardId: string };
-type Cafe = { id: number; name: string; url: string; boards: Board[] };
+type Cafe = { id: number; name: string; url: string; numericId?: string; boards: Board[] };
 
 export default function CafesPage() {
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [boards, setBoards] = useState([{ name: "", boardId: "" }]);
+  const [boards, setBoards] = useState([{ name: "", boardUrl: "" }]);
   const [msg, setMsg] = useState("");
   const [addBoardCafeId, setAddBoardCafeId] = useState<number | null>(null);
-  const [newBoards, setNewBoards] = useState([{ name: "", boardId: "" }]);
+  const [newBoards, setNewBoards] = useState([{ name: "", boardUrl: "" }]);
   const [boardMsg, setBoardMsg] = useState<Record<number, string>>({});
 
   async function fetchCafes() {
@@ -22,13 +22,13 @@ export default function CafesPage() {
 
   useEffect(() => { fetchCafes(); }, []);
 
-  function addBoard() { setBoards([...boards, { name: "", boardId: "" }]); }
+  function addBoard() { setBoards([...boards, { name: "", boardUrl: "" }]); }
   function updateBoard(i: number, field: string, value: string) {
     setBoards(boards.map((b, idx) => idx === i ? { ...b, [field]: value } : b));
   }
   function removeBoard(i: number) { setBoards(boards.filter((_, idx) => idx !== i)); }
 
-  function addNewBoard() { setNewBoards([...newBoards, { name: "", boardId: "" }]); }
+  function addNewBoard() { setNewBoards([...newBoards, { name: "", boardUrl: "" }]); }
   function updateNewBoard(i: number, field: string, value: string) {
     setNewBoards(newBoards.map((b, idx) => idx === i ? { ...b, [field]: value } : b));
   }
@@ -36,7 +36,7 @@ export default function CafesPage() {
 
   async function handleAdd() {
     if (!name || !url) return setMsg("카페명과 URL을 입력해주세요.");
-    const validBoards = boards.filter((b) => b.name && b.boardId);
+    const validBoards = boards.filter((b) => b.name && b.boardUrl);
     setMsg("추가 중...");
     const res = await fetch("/api/cafes", {
       method: "POST",
@@ -46,7 +46,7 @@ export default function CafesPage() {
     const data = await res.json();
     if (data.error) { setMsg(`❌ ${data.error}`); return; }
     setMsg("✅ 추가 완료");
-    setName(""); setUrl(""); setBoards([{ name: "", boardId: "" }]);
+    setName(""); setUrl(""); setBoards([{ name: "", boardUrl: "" }]);
     fetchCafes();
   }
 
@@ -61,15 +61,15 @@ export default function CafesPage() {
   }
 
   async function handleAddBoards(cafeId: number) {
-    const valid = newBoards.filter((b) => b.name && b.boardId);
-    if (valid.length === 0) return setBoardMsg({ ...boardMsg, [cafeId]: "게시판명과 ID를 입력해주세요." });
+    const valid = newBoards.filter((b) => b.name && b.boardUrl);
+    if (valid.length === 0) return setBoardMsg({ ...boardMsg, [cafeId]: "게시판명과 URL을 입력해주세요." });
     setBoardMsg({ ...boardMsg, [cafeId]: "추가 중..." });
     try {
       for (const b of valid) {
         const res = await fetch("/api/cafes", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cafeId, boardName: b.name, boardId: b.boardId }),
+          body: JSON.stringify({ cafeId, boardName: b.name, boardUrl: b.boardUrl }),
         });
         const data = await res.json();
         if (data.error) {
@@ -78,7 +78,7 @@ export default function CafesPage() {
         }
       }
       setBoardMsg({ ...boardMsg, [cafeId]: "✅ 추가 완료" });
-      setNewBoards([{ name: "", boardId: "" }]);
+      setNewBoards([{ name: "", boardUrl: "" }]);
       setAddBoardCafeId(null);
       fetchCafes();
     } catch {
@@ -110,11 +110,12 @@ export default function CafesPage() {
           <input type="text" placeholder="카페 URL (예: https://cafe.naver.com/xxxxx)" value={url} onChange={(e) => setUrl(e.target.value)} className={inputClass} />
 
           <div>
-            <p className="text-xs text-gray-500 mb-2">게시판 목록</p>
+            <p className="text-xs text-gray-500 mb-1">게시판 목록</p>
+            <p className="text-xs text-gray-400 mb-2">게시판 URL 예시: https://cafe.naver.com/f-e/cafes/21676069/menus/28</p>
             {boards.map((b, i) => (
               <div key={i} className="flex gap-2 mb-2">
-                <input type="text" placeholder="게시판명" value={b.name} onChange={(e) => updateBoard(i, "name", e.target.value)} className={`flex-1 ${inputClass}`} />
-                <input type="text" placeholder="게시판 ID (숫자)" value={b.boardId} onChange={(e) => updateBoard(i, "boardId", e.target.value)} className={`w-32 ${inputClass}`} />
+                <input type="text" placeholder="게시판명" value={b.name} onChange={(e) => updateBoard(i, "name", e.target.value)} className={`w-32 ${inputClass}`} />
+                <input type="text" placeholder="게시판 URL" value={b.boardUrl} onChange={(e) => updateBoard(i, "boardUrl", e.target.value)} className={`flex-1 ${inputClass}`} />
                 {boards.length > 1 && (
                   <button onClick={() => removeBoard(i)} className="px-2 py-1 text-gray-400 hover:text-red-500 text-lg">×</button>
                 )}
@@ -137,28 +138,30 @@ export default function CafesPage() {
               <div>
                 <p className="font-semibold text-gray-800">{cafe.name}</p>
                 <a href={cafe.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">{cafe.url}</a>
+                {cafe.numericId && <span className="ml-2 text-xs text-gray-400">ID: {cafe.numericId}</span>}
               </div>
               <button onClick={() => handleDelete(cafe.id)} className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 text-xs rounded">삭제</button>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {cafe.boards.map((board) => (
                 <span key={board.id} className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                  {board.name} (ID: {board.boardId})
+                  {board.name} (메뉴ID: {board.boardId})
                   <button onClick={() => handleDeleteBoard(board.id)} className="ml-1 text-gray-400 hover:text-red-500 leading-none">×</button>
                 </span>
               ))}
               <button
-                onClick={() => { setAddBoardCafeId(cafe.id); setNewBoards([{ name: "", boardId: "" }]); setBoardMsg({}); }}
+                onClick={() => { setAddBoardCafeId(cafe.id); setNewBoards([{ name: "", boardUrl: "" }]); setBoardMsg({}); }}
                 className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs rounded"
               >+ 게시판 추가</button>
             </div>
 
             {addBoardCafeId === cafe.id && (
               <div className="mt-3 border-t border-gray-100 pt-3">
+                <p className="text-xs text-gray-400 mb-2">게시판 URL 예시: https://cafe.naver.com/f-e/cafes/21676069/menus/28</p>
                 {newBoards.map((b, i) => (
                   <div key={i} className="flex gap-2 mb-2">
-                    <input type="text" placeholder="게시판명" value={b.name} onChange={(e) => updateNewBoard(i, "name", e.target.value)} className={`flex-1 ${inputSmClass}`} />
-                    <input type="text" placeholder="게시판 ID" value={b.boardId} onChange={(e) => updateNewBoard(i, "boardId", e.target.value)} className={`w-24 ${inputSmClass}`} />
+                    <input type="text" placeholder="게시판명" value={b.name} onChange={(e) => updateNewBoard(i, "name", e.target.value)} className={`w-28 ${inputSmClass}`} />
+                    <input type="text" placeholder="게시판 URL" value={b.boardUrl} onChange={(e) => updateNewBoard(i, "boardUrl", e.target.value)} className={`flex-1 ${inputSmClass}`} />
                     {newBoards.length > 1 && (
                       <button onClick={() => removeNewBoard(i)} className="text-gray-400 hover:text-red-500 text-base leading-none">×</button>
                     )}

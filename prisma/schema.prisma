@@ -31,6 +31,7 @@ model Cafe {
   id        Int      @id @default(autoincrement())
   name      String
   url       String   @unique
+  numericId String?
   createdAt DateTime @default(now())
   boards    Board[]
 }

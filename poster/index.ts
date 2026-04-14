@@ -56,6 +56,7 @@ async function postToCafe(
   naverId: string,
   naverPw: string,
   cafeUrl: string,
+  numericCafeId: string,
   boardId: string,
   title: string,
   content: string,
@@ -90,9 +91,9 @@ async function postToCafe(
     await login(page, naverId, naverPw);
 
     // 카페 글쓰기 페이지 이동
-    // cafeUrl 예: https://cafe.naver.com/xxxxx
-    const cafeId = cafeUrl.replace(/^https?:\/\/cafe\.naver\.com\//, "").replace(/\/$/, "");
-    const writeUrl = `https://cafe.naver.com/${cafeId}?iframe_url=/ArticleWrite.nhn%3Fclub.clubid=${cafeId}%26menuid=${boardId}`;
+    // cafeUrl 예: https://cafe.naver.com/xxxxx, numericCafeId: 숫자 ID
+    const cafeSlug = cafeUrl.replace(/^https?:\/\/cafe\.naver\.com\//, "").replace(/\/$/, "");
+    const writeUrl = `https://cafe.naver.com/${cafeSlug}?iframe_url=/ArticleWrite.nhn%3Fclub.clubid=${numericCafeId}%26menuid=${boardId}`;
 
     await page.goto(writeUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForTimeout(3000);
@@ -168,10 +169,12 @@ async function processScheduledPosts(): Promise<void> {
 
     try {
       const imagePaths = post.draft.images.map((img) => img.path);
+      const numericCafeId = post.board.cafe.numericId ?? post.board.cafe.url.replace(/^https?:\/\/cafe\.naver\.com\//, "").replace(/\/$/, "");
       const postedUrl = await postToCafe(
         post.account.naverId,
         post.account.naverPw,
         post.board.cafe.url,
+        numericCafeId,
         post.board.boardId,
         post.draft.title,
         post.draft.content,
