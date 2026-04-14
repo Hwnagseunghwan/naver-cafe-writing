@@ -126,8 +126,8 @@ async function postToCafe(
       } catch { /* 이미지 첨부 실패 시 무시 */ }
     }
 
-    // 등록 버튼 클릭
-    await page.locator("button:has-text('등록')").last().click();
+    // 등록 버튼 클릭 (a.BaseButton--skinGreen, <a> 태그임)
+    await page.locator("a.BaseButton--skinGreen").click();
     await page.waitForTimeout(3000);
 
     const postedUrl = page.url();
