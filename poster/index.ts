@@ -94,6 +94,8 @@ async function postToCafe(
     // cafeUrl 예: https://cafe.naver.com/xxxxx, numericCafeId: 숫자 ID
     const cafeSlug = cafeUrl.replace(/^https?:\/\/cafe\.naver\.com\//, "").replace(/\/$/, "");
     const writeUrl = `https://cafe.naver.com/${cafeSlug}?iframe_url=/ArticleWrite.nhn%3Fclub.clubid=${numericCafeId}%26menuid=${boardId}`;
+    console.log(`  글쓰기 URL: ${writeUrl}`);
+    console.log(`  numericCafeId: ${numericCafeId}, boardId: ${boardId}`);
 
     await page.goto(writeUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForTimeout(3000);
