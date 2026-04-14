@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/dotenv": "^6.1.1",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.30",
     "node-cron": "^4.2.1",
