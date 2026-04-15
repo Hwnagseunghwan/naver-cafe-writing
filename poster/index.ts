@@ -11,6 +11,7 @@ import * as dotenv from "dotenv";
 import * as cron from "node-cron";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 
 dotenv.config();
 
@@ -115,10 +116,20 @@ async function postToCafe(
     // 이미지 첨부 (선택적)
     for (const imgPath of imagePaths) {
       try {
-        const absolutePath = path.join(process.cwd(), "public", imgPath);
-        if (fs.existsSync(absolutePath)) {
+        let localPath: string;
+        if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
+          // Vercel Blob URL → 임시 파일로 다운로드
+          const res = await fetch(imgPath);
+          const buffer = Buffer.from(await res.arrayBuffer());
+          const ext = path.extname(new URL(imgPath).pathname) || ".jpg";
+          localPath = path.join(os.tmpdir(), `poster_img_${Date.now()}${ext}`);
+          fs.writeFileSync(localPath, buffer);
+        } else {
+          localPath = path.join(process.cwd(), "public", imgPath);
+        }
+        if (fs.existsSync(localPath)) {
           const fileInput = page.locator("input[type='file']").first();
-          await fileInput.setInputFiles(absolutePath);
+          await fileInput.setInputFiles(localPath);
           await page.waitForTimeout(2000);
         }
       } catch { /* 이미지 첨부 실패 시 무시 */ }
