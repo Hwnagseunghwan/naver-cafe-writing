@@ -42,7 +42,7 @@ function ScheduleForm({
     const res = await fetch("/api/schedule", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ draftId, accountId, boardId, scheduledAt }),
+      body: JSON.stringify({ draftId, accountId, boardId, scheduledAt: new Date(scheduledAt).toISOString() }),
     });
     const data = await res.json();
     if (data.error) { setMsg(`❌ ${data.error}`); return; }
